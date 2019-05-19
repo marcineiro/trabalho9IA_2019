@@ -1,74 +1,64 @@
 %testes trabalho 9 IA
 clear
 clc
-cd digitos
+% cd digitos
 %vetores teste
-intNeu = 10;
+intNeu = 20;
 testes = zeros(900,256);
-k=1;
-for j = 1:90
-    for i = 1:10
-        fileName = sprintf('%d_%d.txt',i-1,j);
-        testes(k,:) = dlmread(fileName);
-        k=k+1;
-    end
-end
 
-treino = dlmread('digitostreinamento900.txt');
-cd ..
-cd Matriz_95
+% treino = dlmread('digitostreinamento900.txt');
+% cd ..
+% cd Matriz_95
 v = xlsread('matriz_v.xlsx');
 v0 = xlsread('vetor_v0.xlsx');
 w = xlsread('matriz_w.xlsx');
 w0 = xlsread('vetor_w0.xlsx');
+% cd ..
+
 cd ..
-zin = zeros(1,intNeu);
-z = zeros(1,intNeu);
-y = zeros(900,10);
+cd OBV
+obv16 = xlsread('10_OBV16.xls');
+cd ..
+cd 'Trabalho 9'
 
-t = zeros(900,10);
-for i = 1:90
-    t(i*10-9:i*10,:) = eye(10);
-end
-t(t==0) = -1;
+A = importdata('semeion.data');
+A(A==0) = -1;
+treino = A(:,1:256);
+t = A(:,257:266);
 
-erroTotal=0;
-for i = 1:900
-    zin = testes(i,:)*v+v0;
-    for j = 1:intNeu
-        z(j)=(1-exp(-2*zin(j)))/(1+exp(-2*zin(j)));
-    end
-    yin=z*w+w0;
-    y(i,:) =(1-exp(-2.*yin))./(1+exp(-2.*yin));
-    y(y<0)=-1;
-    y(y>0)=1;
-    erro = 0;
-    for j = 1:10
-        if(t(i,j)~=y(i,j))
-            erro = 1;
-        end
-    end
-    if(erro~=0)
-        erroTotal = erroTotal+1;
-    end
-end
-
-acertosTeste = 1 - erroTotal/900
+numData = 400;
 
 zin = zeros(1,intNeu);
 z = zeros(1,intNeu);
-y = zeros(900,10);
-yin = zeros(900,10);
+y = zeros(numData,16);
+yin = zeros(numData,16);
+y1 = zeros(numData,16);
 erroTotal=0;
-for i = 1:900
+for i = 1:numData
     zin = treino(i,:)*v+v0;
     for j = 1:intNeu
         z(j)=(1-exp(-2*zin(j)))/(1+exp(-2*zin(j)));
     end
     yin=z*w+w0;
-    y(i,:) =(1-exp(-2.*yin))./(1+exp(-2.*yin));
-    y(y<0)=-1;
-    y(y>0)=1;
+    y1(i,:) =(1-exp(-2.*yin))./(1+exp(-2.*yin));
+    for classe = 1:10
+        y(i,classe) = sqrt(sum((obv16(:,classe)-y1(i,:)').^2));
+    end
+    valor = 10;
+    for classe = 1:10
+        if y(i,classe) < valor
+            valor = y(i,classe);
+            pos = classe;
+        end
+    end
+    for classe = 1:10
+        if classe == pos
+            y(i,classe) = 1;
+        else 
+            y(i,classe) = -1;
+        end
+    end
+    
     erro = 0;
     for j = 1:10
         if(t(i,j)~=y(i,j))
@@ -80,6 +70,4 @@ for i = 1:900
     end
 end
 
-acertosTreino = 1 - erroTotal/900
-
-acertosMedia = (acertosTreino+acertosTeste)/2
+acertos = 1 - erroTotal/numData
